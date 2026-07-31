@@ -1,0 +1,631 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>International Student Survival Hub — Housing</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Instrument+Sans:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+<style>
+:root{
+  --ink:#12263A;--teal:#127E7B;--teal-deep:#0E5F5D;--amber:#F0A32E;--rose:#E85D75;
+  --paper:#F6F7F4;--mist:#EEF1EC;--card:#FFFFFF;--muted:#5E7385;--line:#E1E6E1;
+  --shadow:0 1px 2px rgba(18,38,58,.05),0 8px 24px rgba(18,38,58,.06);
+  --shadow-lift:0 6px 14px rgba(18,38,58,.08),0 18px 40px rgba(18,38,58,.12);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--paper);color:var(--ink);
+  font-family:"Instrument Sans",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+  font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:"Bricolage Grotesque","Instrument Sans",sans-serif;font-weight:800;line-height:1.05;margin:0}
+button{font-family:inherit;cursor:pointer}
+a{color:inherit}img{max-width:100%}
+
+.nav{position:sticky;top:0;z-index:50;background:rgba(246,247,244,.85);backdrop-filter:saturate(1.4) blur(10px);border-bottom:1px solid var(--line)}
+.nav-in{max-width:1200px;margin:0 auto;padding:12px 22px;display:flex;align-items:center;gap:18px}
+.brand{display:flex;align-items:center;gap:11px;background:none;border:0;padding:0}
+.brand .pin{width:30px;height:30px;flex:0 0 auto}
+.brand b{font-family:"Bricolage Grotesque";font-weight:800;font-size:18px;letter-spacing:-.02em}
+.brand small{display:block;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-top:-2px}
+.nav-links{margin-left:auto;display:flex;align-items:center;gap:6px}
+.nav-links button{background:none;border:0;padding:9px 14px;border-radius:10px;color:var(--muted);font-weight:600;font-size:14.5px;transition:.18s}
+.nav-links button:hover{color:var(--ink);background:var(--mist)}
+.nav-links button.active{color:var(--teal-deep);background:#DCEEED}
+.fav-btn{display:flex;align-items:center;gap:7px}
+.fav-btn .count{background:var(--rose);color:#fff;font-size:12px;font-weight:700;min-width:20px;height:20px;border-radius:20px;display:inline-flex;align-items:center;justify-content:center;padding:0 6px}
+
+main{max-width:1200px;margin:0 auto;padding:0 22px 80px}
+.view{display:none;animation:fade .4s ease both}
+.view.show{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.eyebrow{font-family:"Space Mono";font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--teal)}
+
+/* Hero cover */
+.hero{padding:30px 0 8px}
+.hero-media{position:relative;border-radius:24px;overflow:hidden;min-height:470px;display:flex;align-items:flex-end;box-shadow:var(--shadow)}
+.hero-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.hero-overlay{position:absolute;inset:0;background:linear-gradient(90deg,rgba(9,26,38,.86) 0%,rgba(9,26,38,.55) 45%,rgba(9,26,38,.12) 100%)}
+.hero-content{position:relative;padding:44px 46px;max-width:640px;color:#fff}
+.hero-content .eyebrow{color:#8FE0DC}
+.hero-content h1{font-size:clamp(34px,5vw,58px);letter-spacing:-.03em;margin:14px 0 0}
+.hero-content h1 span{color:#F0A32E}
+.hero-content p{font-size:18px;color:#DDE6EA;max-width:46ch;margin:18px 0 0}
+.cta{margin-top:26px;background:var(--amber);color:#12263A;border:0;border-radius:12px;padding:14px 22px;font-weight:700;font-size:15px;box-shadow:0 6px 16px rgba(240,163,46,.35);transition:.18s}
+.cta:hover{transform:translateY(-2px);box-shadow:0 10px 22px rgba(240,163,46,.45)}
+.route-ribbon{margin:22px 4px 6px;display:flex;align-items:center;gap:0;flex-wrap:wrap}
+.stop{display:flex;align-items:center;gap:9px;font-weight:600;font-size:14px}
+.stop .dot{width:12px;height:12px;border-radius:50%;background:var(--teal);box-shadow:0 0 0 4px #DCEEED}
+.stop.end .dot{background:var(--amber);box-shadow:0 0 0 4px #FCEBCB}
+.route-ribbon .seg{width:46px;height:0;border-top:3px dotted var(--muted);opacity:.5;margin:0 6px}
+
+.section-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin:52px 0 20px}
+.section-head h2{font-size:clamp(24px,3.4vw,34px);letter-spacing:-.02em}
+.services{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.svc{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px 20px;text-align:left;position:relative;transition:.2s;min-height:150px;display:flex;flex-direction:column}
+.svc .ico{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:var(--mist);margin-bottom:14px}
+.svc h3{font-size:19px;letter-spacing:-.01em}
+.svc p{color:var(--muted);font-size:13.5px;margin:6px 0 0}
+.svc.live{cursor:pointer;border-color:#BFE0DE}
+.svc.live:hover{transform:translateY(-4px);box-shadow:var(--shadow-lift);border-color:var(--teal)}
+.svc.live .ico{background:#DCEEED}
+.svc.soon{opacity:.62}
+.tag{position:absolute;top:16px;right:16px;font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:4px 9px;border-radius:20px}
+.tag.soon{background:#FCEBCB;color:#9A6412}
+.tag.open{background:#DCEEED;color:var(--teal-deep)}
+.svc .go{margin-top:auto;padding-top:12px;color:var(--teal);font-weight:600;font-size:13.5px;display:flex;align-items:center;gap:6px}
+
+.housing-head{padding:40px 0 8px}
+.housing-head h1{font-size:clamp(30px,4.4vw,46px);letter-spacing:-.03em}
+.housing-head p{color:var(--muted);margin:12px 0 0;max-width:58ch}
+.toolbar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:24px 0 22px}
+.viewtoggle{display:inline-flex;background:var(--mist);border-radius:12px;padding:4px}
+.viewtoggle button{border:0;background:none;padding:8px 16px;border-radius:9px;font-weight:600;font-size:14px;color:var(--muted);display:flex;align-items:center;gap:7px}
+.viewtoggle button.active{background:var(--card);color:var(--ink);box-shadow:var(--shadow)}
+.campuswrap{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:13.5px;font-weight:600}
+.sortwrap{margin-left:auto;display:flex;align-items:center;gap:8px;color:var(--muted);font-size:14px;font-weight:600}
+select{font-family:inherit;font-size:14px;font-weight:600;color:var(--ink);border:1px solid var(--line);background:var(--card);border-radius:10px;padding:9px 12px}
+.count-pill{font-family:"Space Mono";font-size:12.5px;color:var(--muted)}
+
+.housing-body{display:grid;grid-template-columns:246px 1fr;gap:26px;align-items:start}
+.filters{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px;position:sticky;top:84px}
+.filters h4{font-family:"Bricolage Grotesque";font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:0 0 12px}
+.fgroup{padding:16px 0;border-top:1px solid var(--line)}
+.fgroup:first-of-type{border-top:0;padding-top:0}
+.flab{font-weight:600;font-size:13px;margin-bottom:8px}
+.chk{display:flex;align-items:center;gap:10px;padding:5px 0;font-size:14px;font-weight:500;cursor:pointer;color:#2b4257}
+.chk input{accent-color:var(--teal);width:16px;height:16px}
+.segbar{display:inline-flex;background:var(--mist);border-radius:10px;padding:3px;width:100%}
+.segbar button{flex:1;border:0;background:none;padding:7px 8px;border-radius:8px;font-weight:600;font-size:12.5px;color:var(--muted)}
+.segbar button.on{background:var(--card);color:var(--ink);box-shadow:var(--shadow)}
+.clear{margin-top:16px;width:100%;border:1px solid var(--line);background:var(--card);border-radius:10px;padding:10px;font-weight:600;color:var(--muted);font-size:13px}
+.clear:hover{color:var(--ink);border-color:var(--muted)}
+
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:20px}
+.hcard{background:var(--card);border:1px solid var(--line);border-radius:18px;overflow:hidden;transition:.2s;cursor:pointer;position:relative}
+.hcard:hover{transform:translateY(-4px);box-shadow:var(--shadow-lift)}
+.photo{position:relative;aspect-ratio:16/10;overflow:hidden;background:var(--mist)}
+.photo .fallback{position:absolute;inset:0;width:100%;height:100%}
+.photo .hphoto{position:relative;z-index:1;width:100%;height:100%;object-fit:cover;display:block}
+.heart{position:absolute;top:12px;right:12px;width:38px;height:38px;border-radius:50%;border:0;background:rgba(255,255,255,.92);display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow);transition:.16s;z-index:3}
+.heart:hover{transform:scale(1.1)}
+.heart svg{width:19px;height:19px}
+.heart.on svg{fill:var(--rose);stroke:var(--rose)}
+.badge-furn{position:absolute;left:12px;bottom:12px;z-index:2;font-size:11px;font-weight:700;background:rgba(18,38,58,.82);color:#fff;padding:4px 10px;border-radius:20px}
+.hbody{padding:16px 17px 18px}
+.hbody .area{font-family:"Space Mono";font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--teal)}
+.hbody h3{font-size:18px;letter-spacing:-.01em;margin:4px 0 0}
+.price{display:flex;align-items:baseline;gap:5px;margin:12px 0 0}
+.price b{font-family:"Bricolage Grotesque";font-size:23px}
+.price span{color:var(--muted);font-size:13px;font-weight:600}
+.specrow{display:flex;gap:14px;margin:12px 0 0;color:var(--muted);font-size:13px;font-weight:600}
+.specrow .s{display:flex;align-items:center;gap:6px}
+.route-chip{margin:14px 0 0;display:flex;align-items:center;gap:8px;background:var(--mist);border-radius:12px;padding:9px 12px}
+.route-chip .rc-dot{width:9px;height:9px;border-radius:50%;background:var(--teal);flex:0 0 auto}
+.route-chip .rc-line{flex:1;border-top:2px dotted #9fb0be;height:0}
+.route-chip .rc-end{width:9px;height:9px;border-radius:50%;background:var(--amber);flex:0 0 auto}
+.route-chip .rc-txt{font-family:"Space Mono";font-size:11px;color:#3a5266;white-space:nowrap}
+.map-wrap{border:1px solid var(--line);border-radius:18px;overflow:hidden;height:560px}
+#map{height:100%;width:100%}
+.empty{grid-column:1/-1;text-align:center;padding:70px 20px;color:var(--muted)}
+.empty b{display:block;font-family:"Bricolage Grotesque";font-size:20px;color:var(--ink);margin-bottom:6px}
+
+.detail-back{display:inline-flex;align-items:center;gap:8px;background:none;border:0;color:var(--muted);font-weight:600;font-size:14px;padding:26px 0 18px}
+.detail-back:hover{color:var(--ink)}
+.detail-grid{display:grid;grid-template-columns:1.35fr 1fr;gap:30px;align-items:start}
+.detail-photo{border-radius:22px;overflow:hidden;border:1px solid var(--line);position:relative;aspect-ratio:16/10;background:var(--mist)}
+.detail-photo .fallback{position:absolute;inset:0;width:100%;height:100%}
+.detail-photo img{position:relative;z-index:1;width:100%;height:100%;object-fit:cover;display:block}
+.detail-photo .badge-furn{font-size:12px;padding:6px 13px}
+.dh h1{font-size:clamp(26px,3.6vw,38px);letter-spacing:-.02em;margin:6px 0 0}
+.dh .area{font-family:"Space Mono";font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--teal)}
+.dprice{display:flex;align-items:center;gap:14px;margin:18px 0 0;flex-wrap:wrap}
+.dprice b{font-family:"Bricolage Grotesque";font-size:34px}
+.dprice span{color:var(--muted);font-weight:600}
+.dfav{border:1px solid var(--line);background:var(--card);border-radius:12px;padding:11px 16px;font-weight:600;display:inline-flex;align-items:center;gap:9px;font-size:14px}
+.dfav svg{width:18px;height:18px}
+.dfav.on{border-color:var(--rose);color:var(--rose)}
+.dfav.on svg{fill:var(--rose);stroke:var(--rose)}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px;margin-top:20px}
+.panel h4{font-family:"Bricolage Grotesque";font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:0 0 14px}
+.terms{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.term{background:var(--paper);border-radius:12px;padding:14px}
+.term .lbl{font-size:12px;color:var(--muted);font-weight:600}
+.term .val{font-family:"Bricolage Grotesque";font-size:20px;font-weight:800;margin-top:3px}
+.term .val.sm{font-size:15px;font-weight:700;font-family:"Instrument Sans"}
+.util-yes{color:var(--teal)}.util-no{color:#B0563C}
+.routebox{display:flex;align-items:center;gap:12px;background:var(--paper);border-radius:12px;padding:14px 16px}
+.big{font-family:"Bricolage Grotesque";font-size:24px;font-weight:800}
+.feat{display:flex;flex-wrap:wrap;gap:8px}
+.feat span{background:var(--mist);border-radius:20px;padding:7px 13px;font-size:13px;font-weight:600;color:#3a5266}
+.mini-map{height:230px;border-radius:14px;overflow:hidden;border:1px solid var(--line);margin-top:6px}
+
+.qa-head{padding:44px 0 10px}
+.qa-head h1{font-size:clamp(30px,4.4vw,46px);letter-spacing:-.03em}
+.qa-head p{color:var(--muted);margin:12px 0 0;max-width:60ch}
+.qa-list{max-width:820px;margin-top:12px}
+.qa{border-bottom:1px solid var(--line)}
+.qa button{width:100%;text-align:left;background:none;border:0;padding:22px 2px;display:flex;align-items:center;gap:16px;font-family:"Bricolage Grotesque";font-weight:600;font-size:18px;color:var(--ink)}
+.qa .qnum{font-family:"Space Mono";font-size:13px;color:var(--teal);flex:0 0 auto}
+.qa .plus{margin-left:auto;font-size:22px;color:var(--muted);transition:.2s;flex:0 0 auto}
+.qa.open .plus{transform:rotate(45deg);color:var(--teal)}
+.qa .ans{max-height:0;overflow:hidden;transition:max-height .3s ease}
+.qa.open .ans{max-height:360px}
+.qa .ans p{margin:0 0 22px 44px;color:var(--muted);font-size:15.5px;max-width:64ch}
+
+footer{border-top:1px solid var(--line);margin-top:40px}
+.foot-in{max-width:1200px;margin:0 auto;padding:26px 22px;display:flex;gap:14px;flex-wrap:wrap;align-items:center;color:var(--muted);font-size:13px}
+.foot-in .mono{font-size:11.5px}
+
+@media(max-width:900px){
+  .services{grid-template-columns:repeat(2,1fr)}
+  .housing-body{grid-template-columns:1fr}
+  .filters{position:static}
+  .grid{grid-template-columns:1fr}
+  .detail-grid{grid-template-columns:1fr}
+  .hero-content{padding:32px 26px}
+  .hero-overlay{background:linear-gradient(0deg,rgba(9,26,38,.9) 0%,rgba(9,26,38,.45) 70%)}
+  .nav-links button.txt{display:none}
+  .sortwrap{margin-left:0}
+}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto}}
+:focus-visible{outline:3px solid var(--amber);outline-offset:2px;border-radius:6px}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-in">
+    <button class="brand" onclick="go('home')" aria-label="Home">
+      <svg class="pin" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+        <path d="M16 2.5C10.8 2.5 6.5 6.6 6.5 11.6c0 6.7 9.5 17.4 9.5 17.4s9.5-10.7 9.5-17.4C25.5 6.6 21.2 2.5 16 2.5Z" fill="#127E7B"/>
+        <path d="M10.8 14.6 16 10l5.2 4.6V20.4h-10.4V14.6Z" fill="#F6F7F4"/>
+        <rect x="14.5" y="15.9" width="3" height="4.5" rx=".4" fill="#127E7B"/>
+      </svg>
+      <span><b>Survival Hub</b><small>International Students · Vancouver</small></span>
+    </button>
+    <div class="nav-links">
+      <button class="txt" data-nav="home" onclick="go('home')">Home</button>
+      <button class="txt" data-nav="housing" onclick="go('housing')">Housing</button>
+      <button class="txt" data-nav="qa" onclick="go('qa')">Q&amp;A</button>
+      <button class="fav-btn" data-nav="fav" onclick="showFavorites()" aria-label="Saved homes">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#E85D75" stroke-width="2"><path d="M12 21s-7.5-4.9-10-9.3C.6 9 1.8 5.5 5 5.1 7 4.8 8.9 6 12 8.7 15.1 6 17 4.8 19 5.1c3.2.4 4.4 3.9 3 6.6C19.5 16.1 12 21 12 21Z"/></svg>
+        <span class="count" id="favCount">0</span>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<main>
+  <!-- HOME -->
+  <section id="view-home" class="view show">
+    <div class="hero">
+      <div class="hero-media">
+        <img class="hero-img" alt="A place to call home in Vancouver"
+          src="https://images.unsplash.com/photo-1755735340764-3b077cab0c5c?w=1600&q=70&auto=format&fit=crop">
+        <div class="hero-overlay"></div>
+        <div class="hero-content">
+          <div class="eyebrow">Your first week, sorted</div>
+          <h1>New in Vancouver?<br><span>Let's find you a home.</span></h1>
+          <p>One hub for everything an international student needs to settle in — starting with the hardest part: a place to live you can afford, close to your school.</p>
+          <button class="cta" onclick="go('housing')">Browse housing →</button>
+        </div>
+      </div>
+      <div class="route-ribbon" aria-hidden="true">
+        <div class="stop"><span class="dot"></span>You arrive</div><div class="seg"></div>
+        <div class="stop"><span class="dot"></span>Find housing</div><div class="seg"></div>
+        <div class="stop end"><span class="dot"></span>Settled in</div>
+      </div>
+    </div>
+    <div class="section-head"><h2>What we help with</h2><span class="count-pill mono">1 live · 6 on the way</span></div>
+    <div class="services" id="services"></div>
+  </section>
+
+  <!-- HOUSING -->
+  <section id="view-housing" class="view">
+    <div class="housing-head">
+      <div class="eyebrow">Housing · Vancouver</div>
+      <h1>Find affordable housing</h1>
+      <p>Every listing shows the deposit, lease terms, and how far it is from your school — pick your campus and the distances update.</p>
+    </div>
+    <div class="toolbar">
+      <div class="viewtoggle">
+        <button id="tab-list" class="active" onclick="setMode('list')">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="5" rx="1.5"/><rect x="3" y="14" width="18" height="5" rx="1.5"/></svg>List</button>
+        <button id="tab-map" onclick="setMode('map')">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2Z"/><path d="M9 4v14M15 6v14"/></svg>Map</button>
+      </div>
+      <div class="campuswrap">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2"><path d="M3 21h18M6 21V9l6-4 6 4v12M10 21v-5h4v5"/></svg>
+        <label>My campus
+          <select id="campus" onchange="setCampus(this.value)"></select>
+        </label>
+      </div>
+      <div class="sortwrap">
+        <span class="count-pill" id="resultCount"></span>
+        <label>Sort
+          <select id="sort" onchange="applyFilters()">
+            <option value="price-asc">Price: low to high</option>
+            <option value="price-desc">Price: high to low</option>
+            <option value="dist-asc">Closest to campus</option>
+          </select>
+        </label>
+      </div>
+    </div>
+    <div class="housing-body">
+      <aside class="filters">
+        <h4>Filters</h4>
+        <div class="fgroup" id="f-area"><div class="flab">Area</div></div>
+        <div class="fgroup" id="f-rooms"><div class="flab">Bedrooms</div></div>
+        <div class="fgroup"><div class="flab">Washrooms</div>
+          <div class="segbar" id="f-wash">
+            <button class="on" data-w="any" onclick="setWash('any',this)">Any</button>
+            <button data-w="1" onclick="setWash('1',this)">1</button>
+            <button data-w="2" onclick="setWash('2',this)">2+</button>
+          </div>
+        </div>
+        <div class="fgroup"><div class="flab">Furnishing</div>
+          <div class="segbar" id="f-furn">
+            <button class="on" data-f="any" onclick="setFurn('any',this)">Any</button>
+            <button data-f="yes" onclick="setFurn('yes',this)">Furnished</button>
+            <button data-f="no" onclick="setFurn('no',this)">Unfurnished</button>
+          </div>
+        </div>
+        <button class="clear" onclick="clearFilters()">Clear all filters</button>
+      </aside>
+      <div>
+        <div class="grid" id="cards"></div>
+        <div class="map-wrap" id="mapWrap" style="display:none"><div id="map"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DETAIL -->
+  <section id="view-detail" class="view">
+    <button class="detail-back" onclick="go('housing')">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 5 8 12l7 7"/></svg>Back to listings</button>
+    <div id="detailBody"></div>
+  </section>
+
+  <!-- Q&A -->
+  <section id="view-qa" class="view">
+    <div class="qa-head">
+      <div class="eyebrow">Good to know</div>
+      <h1>Renting in Vancouver: the basics</h1>
+      <p>Common questions from international students. This is general guidance to help you ask the right questions — always confirm specifics with the landlord and B.C.'s Residential Tenancy Branch.</p>
+    </div>
+    <div class="qa-list" id="qaList"></div>
+  </section>
+</main>
+
+<footer>
+  <div class="foot-in">
+    <svg width="20" height="20" viewBox="0 0 32 32" fill="none"><path d="M16 2.5C10.8 2.5 6.5 6.6 6.5 11.6c0 6.7 9.5 17.4 9.5 17.4s9.5-10.7 9.5-17.4C25.5 6.6 21.2 2.5 16 2.5Z" fill="#127E7B"/><path d="M10.8 14.6 16 10l5.2 4.6V20.4h-10.4V14.6Z" fill="#F6F7F4"/></svg>
+    <span>International Student Survival Hub — Housing MVP</span>
+    <span class="mono" style="margin-left:auto">Sample data · Photos via Unsplash · Not a real listing service</span>
+  </div>
+</footer>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+  integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script>
+/* ---------------- Campuses (all Metro Vancouver schools) ---------------- */
+const CAMPUSES=[
+ {name:"Downtown Vancouver",short:"Downtown",pos:[49.2820,-123.1187]},
+ {name:"UBC — Vancouver",short:"UBC",pos:[49.2606,-123.2460]},
+ {name:"SFU — Burnaby",short:"SFU",pos:[49.2781,-122.9199]},
+ {name:"SFU — Harbour Centre (Downtown)",short:"SFU DT",pos:[49.2847,-123.1112]},
+ {name:"BCIT — Burnaby",short:"BCIT",pos:[49.2506,-123.0028]},
+ {name:"Langara College",short:"Langara",pos:[49.2262,-123.1080]},
+ {name:"Vancouver Community College — Broadway",short:"VCC",pos:[49.2626,-123.0703]},
+ {name:"Emily Carr University",short:"Emily Carr",pos:[49.2712,-123.1006]},
+ {name:"University Canada West — Downtown",short:"UCW",pos:[49.2839,-123.1150]},
+ {name:"Douglas College — New Westminster",short:"Douglas",pos:[49.2001,-122.9130]},
+ {name:"Capilano University — North Van",short:"CapU",pos:[49.3197,-123.0080]},
+ {name:"KPU — Richmond",short:"KPU",pos:[49.1725,-123.1370]}
+];
+
+/* ---------------- Homes (photo = Unsplash CDN id) ---------------- */
+const IMG=id=>`https://images.unsplash.com/${id}?w=900&q=70&auto=format&fit=crop`;
+const PALETTE=['#127E7B','#F0A32E','#E85D75','#3E6EA5','#6BA368','#C97B5A'];
+const HOMES=[
+ {id:1,title:"Bright studio steps from Jericho Beach",area:"Kitsilano",price:1650,perRoom:false,beds:0,wash:1,furnished:true,utils:true,deposit:825,lease:12,transit:"99 B-Line",lat:49.2685,lng:-123.1665,img:"photo-1762845872088-12c352bbb119",
+  desc:"A light-filled studio a few blocks from the beach, ideal for a student who wants calm mornings and an easy bus ride to class.",feat:["In-suite laundry","Bike storage","Utilities included","No pets"]},
+ {id:2,title:"Shared 2-bed, close to the west side",area:"Point Grey",price:1200,perRoom:true,beds:2,wash:1,furnished:true,utils:true,deposit:600,lease:8,transit:"R4 / 14 bus",lat:49.2668,lng:-123.2010,img:"photo-1554995207-c18c203602cb",
+  desc:"One room in a friendly two-bedroom shared with another international student, on the quiet, leafy west side of the city.",feat:["Shared kitchen","Furnished room","Utilities included","Female housemates"]},
+ {id:3,title:"Modern 1-bed near the Canada Line",area:"Marpole",price:1850,perRoom:false,beds:1,wash:1,furnished:false,utils:false,deposit:925,lease:12,transit:"Marine Drive Stn",lat:49.2098,lng:-123.1360,img:"photo-1757970326337-95d7cca56fa1",
+  desc:"A newer one-bedroom for someone who wants their own space and quick SkyTrain access to the airport, Richmond and downtown.",feat:["Dishwasher","Gym in building","Parking available","Pet friendly"]},
+ {id:4,title:"Cozy garden suite off Main St",area:"Mount Pleasant",price:1500,perRoom:false,beds:1,wash:1,furnished:true,utils:true,deposit:750,lease:6,transit:"Main St–Science World",lat:49.2632,lng:-123.1005,img:"photo-1755735340764-3b077cab0c5c",
+  desc:"A ground-floor suite in the city's most walkable neighbourhood — cafés, groceries and nightlife at your door. Shorter 6-month lease.",feat:["Private entrance","Furnished","Utilities included","Short lease OK"]},
+ {id:5,title:"Spacious 3-bed house to share",area:"Kerrisdale",price:950,perRoom:true,beds:3,wash:2,furnished:false,utils:false,deposit:950,lease:12,transit:"41 / 16 bus",lat:49.2340,lng:-123.1555,img:"photo-1605146769289-440113cc3d00",
+  desc:"A room in a big house shared by three students. The cheapest per-month option here if you don't mind bringing your own furniture.",feat:["Backyard","Two bathrooms","Street parking","Long lease"]},
+ {id:6,title:"Studio near VGH & the Broadway line",area:"Fairview",price:1700,perRoom:false,beds:0,wash:1,furnished:true,utils:true,deposit:850,lease:10,transit:"Broadway–City Hall",lat:49.2650,lng:-123.1250,img:"photo-1757372429876-ebeda13edfab",
+  desc:"A tidy furnished studio in central Fairview, handy for health-sciences students and anyone who wants to live near the action.",feat:["Furnished","Utilities included","Rooftop patio","Secure entry"]}
+];
+const SERVICES=[
+ {name:"Housing",live:true,d:"Find a place to live near campus.",ico:'M3 11 12 3l9 8M5 10v10h14V10'},
+ {name:"Work",live:false,d:"Part-time jobs and student-friendly employers.",ico:'M4 8h16v11H4zM9 8V5h6v3'},
+ {name:"Healthcare",live:false,d:"Clinics, insurance and getting registered.",ico:'M12 5v14M5 12h14'},
+ {name:"Groceries",live:false,d:"Where to shop, and what it costs.",ico:'M4 6h16l-2 11H6L4 6zM4 6 3 3'},
+ {name:"Transportation",live:false,d:"Transit passes, routes and getting around.",ico:'M6 4h12v11H6zM6 15v3M18 15v3M8 8h8'},
+ {name:"Restaurants",live:false,d:"Affordable eats and food from home.",ico:'M6 3v8M6 11a2 2 0 0 0 4 0V3M8 11v10M17 3c-2 1-2 8 0 8v10'},
+ {name:"Local events",live:false,d:"Meet people and explore the city.",ico:'M5 6h14v14H5zM5 10h14M9 3v4M15 3v4'}
+];
+const QA=[
+ {q:"How much deposit can a landlord ask for?",a:"In B.C., a security (damage) deposit can't be more than half of one month's rent, and a separate pet deposit is capped at another half-month. You pay it at the start of the tenancy and it should be returned, with interest, when you move out if there's no damage."},
+ {q:"What does “utilities included” actually cover?",a:"It varies. It usually means heat and hot water, and sometimes electricity, internet or water. Always ask the landlord to list exactly which utilities are included so you can budget for the rest."},
+ {q:"What's a typical minimum lease?",a:"Many Vancouver rentals are 12-month fixed terms, though you'll find 6–10 month options too. A fixed term means you commit for that whole period, so match the lease length to how long you'll be studying."},
+ {q:"Do I need local credit history to rent?",a:"Often no. International students commonly provide a proof of enrolment letter, proof of funds or a guarantor instead of a Canadian credit score. Having these documents ready makes your application much stronger."},
+ {q:"How do I get to campus without a car?",a:"Metro Vancouver has an extensive bus and SkyTrain network, and full-time students at any public post-secondary get the U-Pass BC bundled into their fees for unlimited transit. Use the campus selector on the Housing page to see travel distance from each home to your school."},
+ {q:"What are my rights as a renter?",a:"Tenancies are governed by B.C.'s Residential Tenancy Branch (RTB), which sets rules on deposits, notice for entry, and rent increases. If something feels off, the RTB website is the place to check before you sign."},
+ {q:"Furnished or unfurnished — which is better?",a:"Furnished saves you the cost and hassle of buying furniture and is great for shorter stays. Unfurnished is usually cheaper each month and makes more sense if you're here for a year or more."},
+ {q:"When should I start looking?",a:"Vancouver's rental market moves fast. Start searching 4–8 weeks before your move date, have your documents ready, and be prepared to view and decide quickly."}
+];
+
+/* ---------------- State ---------------- */
+let state={mode:'list',wash:'any',furn:'any',areas:new Set(),beds:new Set(),favorites:loadFavs(),detailId:null,onlyFav:false,campus:0};
+let map=null,mini=null,pinLayer=null,campusMarker=null;
+
+function loadFavs(){try{return new Set(JSON.parse(localStorage.getItem('isshub_favs')||'[]'))}catch(e){return new Set()}}
+function saveFavs(){try{localStorage.setItem('isshub_favs',JSON.stringify([...state.favorites]))}catch(e){}}
+
+/* ---------------- Distance ---------------- */
+function distKm(a,b){const R=6371,r=x=>x*Math.PI/180;
+  const dLat=r(b[0]-a[0]),dLng=r(b[1]-a[1]);
+  const s=Math.sin(dLat/2)**2+Math.cos(r(a[0]))*Math.cos(r(b[0]))*Math.sin(dLng/2)**2;
+  return R*2*Math.atan2(Math.sqrt(s),Math.sqrt(1-s));}
+function homeDist(h){return distKm([h.lat,h.lng],CAMPUSES[state.campus].pos);}
+function busMin(km){return Math.round(km*3.1+6);}
+
+/* ---------------- Fallback SVG (offline / broken image) ---------------- */
+function fallbackSVG(h){
+  const c=PALETTE[(h.id-1)%PALETTE.length];
+  return `<svg class="fallback" viewBox="0 0 400 250" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+    <rect width="400" height="250" fill="#EAF4F3"/>
+    <path d="M0 130 L90 88 L180 130 L270 84 L400 132 L400 250 L0 250Z" fill="#AFC7C4"/>
+    <rect x="150" y="150" width="130" height="80" rx="4" fill="${c}"/>
+    <path d="M144 150 L215 106 L286 150 Z" fill="${c}" opacity=".82"/>
+    <rect x="200" y="176" width="26" height="54" rx="2" fill="#12263A" opacity=".5"/>
+    <rect x="0" y="228" width="400" height="22" fill="#6BA368" opacity=".55"/></svg>`;
+}
+const heartSVG='<svg viewBox="0 0 24 24" fill="none" stroke="#8aa0af" stroke-width="2"><path d="M12 21s-7.5-4.9-10-9.3C.6 9 1.8 5.5 5 5.1 7 4.8 8.9 6 12 8.7 15.1 6 17 4.8 19 5.1c3.2.4 4.4 3.9 3 6.6C19.5 16.1 12 21 12 21Z"/></svg>';
+function photoBlock(h){
+  return `<div class="photo">${fallbackSVG(h)}
+    <img class="hphoto" loading="lazy" alt="${h.title}" src="${IMG(h.img)}" onerror="this.style.display='none'">
+    <button class="heart ${state.favorites.has(h.id)?'on':''}" onclick="event.stopPropagation();toggleFav(${h.id},this)" aria-label="Save home">${heartSVG}</button>
+    <span class="badge-furn">${h.furnished?'Furnished':'Unfurnished'}</span></div>`;
+}
+
+/* ---------------- Navigation ---------------- */
+function go(v){
+  state.onlyFav=false;
+  document.querySelectorAll('.view').forEach(s=>s.classList.remove('show'));
+  document.getElementById('view-'+v).classList.add('show');
+  document.querySelectorAll('.nav-links [data-nav]').forEach(b=>b.classList.toggle('active',b.dataset.nav===v));
+  window.scrollTo({top:0,behavior:'smooth'});
+  if(v==='housing'){applyFilters(); if(state.mode==='map') requestAnimationFrame(initMap);}
+}
+function showFavorites(){state.onlyFav=true;
+  document.querySelectorAll('.view').forEach(s=>s.classList.remove('show'));
+  document.getElementById('view-housing').classList.add('show');
+  document.querySelectorAll('.nav-links [data-nav]').forEach(b=>b.classList.toggle('active',b.dataset.nav==='fav'));
+  window.scrollTo({top:0,behavior:'smooth'});applyFilters();}
+
+/* ---------------- Home ---------------- */
+function renderServices(){
+  document.getElementById('services').innerHTML=SERVICES.map(s=>`
+    <div class="svc ${s.live?'live':'soon'}" ${s.live?'onclick="go(\'housing\')" role="button" tabindex="0" onkeydown="if(event.key===\'Enter\')go(\'housing\')"':''}>
+      <span class="tag ${s.live?'open':'soon'}">${s.live?'Open now':'Coming soon'}</span>
+      <span class="ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="${s.live?'#127E7B':'#5E7385'}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="${s.ico}"/></svg></span>
+      <h3>${s.name}</h3><p>${s.d}</p>${s.live?'<span class="go">Browse listings →</span>':''}
+    </div>`).join('');
+}
+
+/* ---------------- Filters ---------------- */
+function renderControls(){
+  document.getElementById('campus').innerHTML=CAMPUSES.map((c,i)=>`<option value="${i}">${c.name}</option>`).join('');
+  const areas=[...new Set(HOMES.map(h=>h.area))];
+  document.querySelector('#f-area').insertAdjacentHTML('beforeend',
+    areas.map(a=>`<label class="chk"><input type="checkbox" value="${a}" onchange="toggleArea('${a}',this)">${a}</label>`).join(''));
+  const beds=[{v:0,l:'Studio'},{v:1,l:'1'},{v:2,l:'2'},{v:3,l:'3+'}];
+  document.querySelector('#f-rooms').insertAdjacentHTML('beforeend',
+    beds.map(b=>`<label class="chk"><input type="checkbox" value="${b.v}" onchange="toggleBed(${b.v},this)">${b.l}</label>`).join(''));
+}
+function setCampus(i){state.campus=+i;applyFilters();
+  if(map){if(campusMarker)map.removeLayer(campusMarker);
+    campusMarker=L.marker(CAMPUSES[state.campus].pos,{icon:campusIcon()}).addTo(map).bindPopup('<b>'+CAMPUSES[state.campus].name+'</b>');
+    drawPins(filtered());}}
+function toggleArea(a,el){el.checked?state.areas.add(a):state.areas.delete(a);applyFilters();}
+function toggleBed(v,el){el.checked?state.beds.add(v):state.beds.delete(v);applyFilters();}
+function setWash(v,el){state.wash=v;el.parentNode.querySelectorAll('button').forEach(b=>b.classList.remove('on'));el.classList.add('on');applyFilters();}
+function setFurn(v,el){state.furn=v;el.parentNode.querySelectorAll('button').forEach(b=>b.classList.remove('on'));el.classList.add('on');applyFilters();}
+function clearFilters(){
+  state.areas.clear();state.beds.clear();state.wash='any';state.furn='any';state.onlyFav=false;
+  document.querySelectorAll('.filters input[type=checkbox]').forEach(c=>c.checked=false);
+  document.querySelectorAll('#f-wash button, #f-furn button').forEach(b=>b.classList.toggle('on',b.dataset.w==='any'||b.dataset.f==='any'));
+  document.getElementById('sort').value='price-asc';applyFilters();
+}
+
+/* ---------------- Filtering ---------------- */
+function filtered(){
+  let list=HOMES.filter(h=>{
+    if(state.onlyFav && !state.favorites.has(h.id)) return false;
+    if(state.areas.size && !state.areas.has(h.area)) return false;
+    if(state.beds.size){const b=h.beds>=3?3:h.beds; if(!state.beds.has(b)) return false;}
+    if(state.wash==='1' && h.wash!==1) return false;
+    if(state.wash==='2' && h.wash<2) return false;
+    if(state.furn==='yes' && !h.furnished) return false;
+    if(state.furn==='no' && h.furnished) return false;
+    return true;
+  });
+  const s=document.getElementById('sort').value;
+  list.sort((a,b)=> s==='price-desc'?b.price-a.price : s==='dist-asc'?homeDist(a)-homeDist(b) : a.price-b.price);
+  return list;
+}
+function applyFilters(){
+  const list=filtered();
+  document.getElementById('resultCount').textContent=`${list.length} home${list.length!==1?'s':''}`;
+  const cards=document.getElementById('cards');
+  if(!list.length){
+    cards.innerHTML=`<div class="empty"><b>${state.onlyFav?'No saved homes yet':'No homes match those filters'}</b>${state.onlyFav?'Tap the heart on any listing to save it here.':'Try removing a filter to see more.'}</div>`;
+  }else{cards.innerHTML=list.map(cardHTML).join('');}
+  if(state.mode==='map' && map) drawPins(list);
+}
+
+/* ---------------- Card ---------------- */
+function cardHTML(h){
+  const km=homeDist(h);
+  return `<article class="hcard" onclick="openDetail(${h.id})">
+    ${photoBlock(h)}
+    <div class="hbody">
+      <div class="area">${h.area}</div>
+      <h3>${h.title}</h3>
+      <div class="price"><b>$${h.price.toLocaleString()}</b><span>/mo${h.perRoom?' · per room':''}</span></div>
+      <div class="specrow">
+        <span class="s">${bedIco()} ${h.beds===0?'Studio':h.beds+' bed'}</span>
+        <span class="s">${washIco()} ${h.wash} bath</span>
+        <span class="s">${utilIco()} ${h.utils?'Utils incl.':'Utils extra'}</span>
+      </div>
+      <div class="route-chip"><span class="rc-dot"></span><span class="rc-line"></span><span class="rc-end"></span>
+        <span class="rc-txt">${km.toFixed(1)} km → ${CAMPUSES[state.campus].short} · ~${busMin(km)} min</span></div>
+    </div></article>`;
+}
+const bedIco=()=>'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 18v-6h18v6M3 12V7h9v5"/></svg>';
+const washIco=()=>'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 12h16v3a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4v-3ZM6 12V6a2 2 0 0 1 4 0"/></svg>';
+const utilIco=()=>'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m13 2-9 12h7l-1 8 9-12h-7l1-8Z"/></svg>';
+
+/* ---------------- Favorites ---------------- */
+function toggleFav(id,el){
+  state.favorites.has(id)?state.favorites.delete(id):state.favorites.add(id);
+  saveFavs();
+  document.getElementById('favCount').textContent=state.favorites.size;
+  if(el)el.classList.toggle('on',state.favorites.has(id));
+  if(state.onlyFav) applyFilters();
+  const df=document.getElementById('detailFav');
+  if(df && state.detailId===id){df.classList.toggle('on',state.favorites.has(id));df.querySelector('span').textContent=state.favorites.has(id)?'Saved':'Save';}
+}
+
+/* ---------------- Map ---------------- */
+function setMode(m){
+  state.mode=m;
+  document.getElementById('tab-list').classList.toggle('active',m==='list');
+  document.getElementById('tab-map').classList.toggle('active',m==='map');
+  document.getElementById('cards').style.display=m==='list'?'grid':'none';
+  document.getElementById('mapWrap').style.display=m==='map'?'block':'none';
+  if(m==='map') requestAnimationFrame(initMap);
+}
+function initMap(){
+  if(!window.L) return;
+  if(!map){
+    map=L.map('map',{scrollWheelZoom:false}).setView([49.25,-123.13],12);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{attribution:'© OpenStreetMap © CARTO',maxZoom:19}).addTo(map);
+    campusMarker=L.marker(CAMPUSES[state.campus].pos,{icon:campusIcon()}).addTo(map).bindPopup('<b>'+CAMPUSES[state.campus].name+'</b>');
+  }
+  map.invalidateSize();drawPins(filtered());
+}
+function drawPins(list){
+  if(!map) return;
+  if(pinLayer) map.removeLayer(pinLayer);
+  pinLayer=L.layerGroup();
+  list.forEach(h=>{const km=homeDist(h);
+    L.marker([h.lat,h.lng],{icon:priceIcon(h)}).addTo(pinLayer)
+     .bindPopup(`<b>${h.title}</b><br>$${h.price.toLocaleString()}/mo · ${h.area}<br>${km.toFixed(1)} km to ${CAMPUSES[state.campus].short}`);});
+  pinLayer.addTo(map);
+  const pts=list.map(h=>[h.lat,h.lng]).concat([CAMPUSES[state.campus].pos]);
+  if(pts.length) map.fitBounds(pts,{padding:[45,45],maxZoom:13});
+}
+function priceIcon(h){return L.divIcon({className:'',html:`<div style="background:#127E7B;color:#fff;font:700 12px/1 'Space Mono',monospace;padding:6px 9px;border-radius:20px;box-shadow:0 3px 8px rgba(0,0,0,.25);white-space:nowrap;border:2px solid #fff">$${(h.price/1000).toFixed(h.price%1000?1:0)}k</div>`,iconSize:[0,0],iconAnchor:[24,14]});}
+function campusIcon(){return L.divIcon({className:'',html:`<div style="background:#F0A32E;color:#12263A;font:800 11px/1 'Space Mono',monospace;padding:7px 11px;border-radius:20px;box-shadow:0 3px 8px rgba(0,0,0,.3);border:2px solid #fff;white-space:nowrap">${CAMPUSES[state.campus].short}</div>`,iconSize:[0,0],iconAnchor:[26,14]});}
+
+/* ---------------- Detail ---------------- */
+function openDetail(id){
+  const h=HOMES.find(x=>x.id===id);state.detailId=id;
+  const fav=state.favorites.has(id),km=homeDist(h),cam=CAMPUSES[state.campus];
+  document.getElementById('detailBody').innerHTML=`
+   <div class="detail-grid">
+    <div>
+      <div class="detail-photo">${fallbackSVG(h)}<img alt="${h.title}" src="${IMG(h.img)}" onerror="this.style.display='none'"><span class="badge-furn">${h.furnished?'Furnished':'Unfurnished'}</span></div>
+      <div class="panel"><h4>About this home</h4><p style="margin:0;color:#3a5266">${h.desc}</p>
+        <div class="feat" style="margin-top:16px">${h.feat.map(f=>`<span>${f}</span>`).join('')}</div></div>
+      <div class="panel"><h4>On the map</h4><div class="mini-map" id="miniMap"></div></div>
+    </div>
+    <div>
+      <div class="dh"><div class="area">${h.area} · Vancouver</div><h1>${h.title}</h1></div>
+      <div class="dprice"><b>$${h.price.toLocaleString()}</b><span>/month${h.perRoom?' · per room':''}</span>
+        <button class="dfav ${fav?'on':''}" id="detailFav" onclick="toggleFav(${h.id},this)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#8aa0af" stroke-width="2"><path d="M12 21s-7.5-4.9-10-9.3C.6 9 1.8 5.5 5 5.1 7 4.8 8.9 6 12 8.7 15.1 6 17 4.8 19 5.1c3.2.4 4.4 3.9 3 6.6C19.5 16.1 12 21 12 21Z"/></svg>
+          <span>${fav?'Saved':'Save'}</span></button></div>
+      <div class="panel"><h4>Basic terms</h4>
+        <div class="terms">
+          <div class="term"><div class="lbl">Deposit</div><div class="val">$${h.deposit.toLocaleString()}</div></div>
+          <div class="term"><div class="lbl">Minimum lease</div><div class="val">${h.lease} mo</div></div>
+          <div class="term"><div class="lbl">Utilities</div><div class="val sm ${h.utils?'util-yes':'util-no'}">${h.utils?'Included':'Not included'}</div></div>
+          <div class="term"><div class="lbl">Furnishing</div><div class="val sm">${h.furnished?'Furnished':'Unfurnished'}</div></div>
+        </div></div>
+      <div class="panel"><h4>Getting to ${cam.short}</h4>
+        <div class="routebox"><span style="width:11px;height:11px;border-radius:50%;background:var(--teal)"></span>
+          <div style="flex:1;border-top:2px dotted #9fb0be"></div>
+          <span style="width:11px;height:11px;border-radius:50%;background:var(--amber)"></span></div>
+        <div style="display:flex;gap:24px;margin-top:14px">
+          <div><div class="lbl" style="font-size:12px;color:var(--muted);font-weight:600">Distance to ${cam.short}</div><div class="big">${km.toFixed(1)} km</div></div>
+          <div><div class="lbl" style="font-size:12px;color:var(--muted);font-weight:600">Est. by bus</div><div class="big">~${busMin(km)} min</div></div>
+        </div>
+        <div style="margin-top:12px;color:var(--muted);font-size:14px">Nearest transit: <b style="color:var(--ink)">${h.transit}</b></div></div>
+      <div class="panel"><h4>Rooms</h4>
+        <div class="terms">
+          <div class="term"><div class="lbl">Bedrooms</div><div class="val">${h.beds===0?'Studio':h.beds}</div></div>
+          <div class="term"><div class="lbl">Washrooms</div><div class="val">${h.wash}</div></div>
+        </div></div>
+    </div>
+   </div>`;
+  go('detail');
+  requestAnimationFrame(()=>{
+    if(mini){mini.remove();mini=null;}
+    if(window.L){
+      mini=L.map('miniMap',{scrollWheelZoom:false,dragging:false,zoomControl:false}).setView([h.lat,h.lng],13);
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{attribution:'© OSM © CARTO'}).addTo(mini);
+      L.marker([h.lat,h.lng],{icon:priceIcon(h)}).addTo(mini);
+      L.marker(cam.pos,{icon:campusIcon()}).addTo(mini);
+      mini.fitBounds([[h.lat,h.lng],cam.pos],{padding:[30,30]});
+    }
+  });
+}
+
+/* ---------------- Q&A ---------------- */
+function renderQA(){
+  document.getElementById('qaList').innerHTML=QA.map((x,i)=>`
+   <div class="qa"><button onclick="this.parentNode.classList.toggle('open')">
+     <span class="qnum">${String(i+1).padStart(2,'0')}</span>${x.q}<span class="plus">+</span></button>
+     <div class="ans"><p>${x.a}</p></div></div>`).join('');
+}
+
+/* ---------------- Init ---------------- */
+renderServices();renderControls();renderQA();
+document.getElementById('favCount').textContent=state.favorites.size;
+document.querySelector('[data-nav="home"]').classList.add('active');
+</script>
+</body>
+</html>
